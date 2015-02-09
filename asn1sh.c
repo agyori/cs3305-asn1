@@ -7,10 +7,92 @@
 
 #define MAX_INPUT_LENGTH 512
 
-// Global variables
+// Data structures
+typedef struct Node Node;
+typedef struct Stack Stack;
+
+/**
+ * Node implementation
+ */
+
+struct Node
+{
+  char* value;
+  Node *next;
+};
+
+
+/**
+* Stack implementation
+*/
+struct Stack
+{
+  Node *top;
+  int size;
+};
+
+/**
+ * Global variables
+ */
 char* username; // Hold the username
 char cmd[4][128]; // Holds input for 3 possible pipes and 128 
                   // characters per command (ex. A|B|C|D)
+Stack historyStack;
+
+
+/** 
+* Stack  functions
+*/
+
+// Push to the stack
+void stackPush(Stack *stack, char* val)
+{
+  Node node;
+  node.value = val;
+  if (stack->size == 0)
+  {
+    stack->top = &node;
+    stack->size++;
+  }
+  else
+  {
+
+    node.next = stack->top;
+    stack->top = &node;
+    stack->size++;
+  }
+}
+
+// Pop the stack
+Node stackPop(Stack *stack)
+{
+  Node temp;
+  if (stack->size == 0)
+  {
+    
+    printf("Cannot pop from stack: stack is empty\n");
+    exit(EXIT_FAILURE);
+  }
+  else if (stack->size == 1)
+  {
+    // Because we keep track of the size as an integer, we can just return the
+    // top of the node without removing it as long as we decrement the size 
+    // counter.
+    temp = *stack->top;
+    stack->size--;
+    return temp;
+
+
+  }
+  else
+  {
+    temp = *stack->top;
+    stack->top = stack->top->next;
+    stack->size--;
+    return temp;
+  }
+}
+
 
 void clearCMD()
 {
@@ -68,9 +150,30 @@ void shellExit()
 }
 
 // Print the n last lines that were executed in the shell. Default is 10.
-void shellHistory()
+void shellHistory(int n)
 {
-  
+  int i;
+  if (n > historyStack.size)
+    n = historyStack.size;
+  // Iterate through n times.
+  Node* temp = historyStack.top;
+  printf("shellHistory[0]:%s\n", temp->value);
+  for (i = 1; i < n; i++)
+  {
+    temp = temp->next;
+    printf("shellHistory[%d]:%s\n", i, temp->value);
+  }
+}
+
+void writeToHistory(char* input)
+{
+  // Create a new
+  char* temp;
+  temp = (char*)malloc((MAX_INPUT_LENGTH+1)*sizeof(char));
+  memset(temp, '\0', MAX_INPUT_LENGTH+1);
+  strcpy(temp, input);
+  // Push the input to the stack
+  stackPush(&historyStack, temp);
 }
 
 
@@ -186,6 +289,8 @@ int main (int argc, char** argv)
     clearCMD();
     // Get the raw input and store it in input
     receiveInput(input);
+    // Record the raw input to the history stack.
+    writeToHistory(input);
     // Count how many pipes there are in the raw input. We do this now because parseInput alters the raw input
     pCount = pipeCount(input);
     // Parse the input and store it in the global variable CMD
