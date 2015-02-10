@@ -5,7 +5,9 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#define MAX_INPUT_LENGTH 512
+#define MAX_INPUT_LENGTH 256
+#define MAX_ELEMENT_LENGTH 64
+#define DEFAULT_STACK_LENGTH 150
 
 // Data structures
 typedef struct Node Node;
@@ -27,7 +29,8 @@ struct Node
 */
 struct Stack
 {
-  Node *top;
+  char contents[DEFAULT_STACK_LENGTH][MAX_INPUT_LENGTH];
+  Node* top;
   int size;
 };
 
@@ -35,7 +38,7 @@ struct Stack
  * Global variables
  */
 char* username; // Hold the username
-char cmd[4][128]; // Holds input for 3 possible pipes and 128 
+char cmd[4][MAX_ELEMENT_LENGTH]; // Holds input for 3 possible pipes and 128 
                   // characters per command (ex. A|B|C|D)
 Stack historyStack;
 
@@ -44,21 +47,33 @@ Stack historyStack;
 * Stack  functions
 */
 
-// Push to the stack
-void stackPush(Stack *stack, char* val)
+void stackInit(Stack* stack)
 {
-  Node node;
-  node.value = val;
+  
+}
+
+void stackDestroy(Stack* stack)
+{
+
+}
+
+// Push to the stack
+void stackPush(Stack* stack, char* val)
+{
+  Node* node;
+  node->value = val;
+  printf("val:%s\n", val);
   if (stack->size == 0)
   {
-    stack->top = &node;
+    stack->top = node;
+    printf("Top of stack:%s\n", stack->top->value);
     stack->size++;
   }
   else
   {
 
-    node.next = stack->top;
-    stack->top = &node;
+    node->next = stack->top;
+    stack->top = node;
     stack->size++;
   }
 }
@@ -96,10 +111,10 @@ Node stackPop(Stack *stack)
 
 void clearCMD()
 {
-  memset(cmd[0], '\0', 128);
-  memset(cmd[1], '\0', 128);
-  memset(cmd[2], '\0', 128);
-  memset(cmd[3], '\0', 128);
+  memset(cmd[0], '\0', MAX_ELEMENT_LENGTH);
+  memset(cmd[1], '\0', MAX_ELEMENT_LENGTH);
+  memset(cmd[2], '\0', MAX_ELEMENT_LENGTH);
+  memset(cmd[3], '\0', MAX_ELEMENT_LENGTH);
 }
 
 // Get the input and return it.
@@ -167,7 +182,7 @@ void shellHistory(int n)
 
 void writeToHistory(char* input)
 {
-  // Create a new
+  // Create a new pointer to hold the data
   char* temp;
   temp = (char*)malloc((MAX_INPUT_LENGTH+1)*sizeof(char));
   memset(temp, '\0', MAX_INPUT_LENGTH+1);
@@ -320,8 +335,10 @@ int main (int argc, char** argv)
       perror("This shell does not support more than 3 pipes.");
       exit(EXIT_FAILURE);
     }
-
-    return 0; // TESTAN===========================================================================
+    printf("Size of stack: %d\n", historyStack.size);
+    printf("Top of stack in main:%s\n", historyStack.top->value);
+    shellHistory(5);
+    //return 0; // TESTAN===========================================================================
   }
 
   return 0;
