@@ -140,15 +140,35 @@ void writeToHistory(char* input)
 char** tokenizeInput(char* input)
 {
   printf("input:%s\n", input);
-  int i, j;
+  int i, j, k, elementcount;
   char tempInput[MAX_ELEMENT_LENGTH+1]; // Used to preserve char* input param.
-  //char tokenized[MAX_ARGS_AMOUNT][MAX_ELEMENT_LENGTH+1]; // Max of 8 args per command.
-  char** tokenized = (char**)malloc(MAX_ARGS_AMOUNT * sizeof(char*));
-  for (j = 0; j < MAX_ARGS_AMOUNT; j++)
-  {
-    tokenized[j] = (char*)malloc((MAX_ELEMENT_LENGTH+1) * sizeof(char));
-  }
+  char countInput[MAX_ELEMENT_LENGTH+1];
+  
+  // Copy the input into the temp string and replace all newline chacacters with null terminators.
   strcpy(tempInput, input);
+  for(k = 0; k < MAX_ELEMENT_LENGTH+1; k++)
+    if (tempInput[k] == '\n')
+      tempInput[k] = '\0';
+  strcpy(countInput, tempInput);
+
+  // Count how many elements there are in the input
+  elementcount = 0;
+  char* tempCountToken = strtok(countInput, " ");
+  while (tempCountToken)
+  {
+    elementcount++;
+    printf("countToken[%d-1]:%s\n", elementcount,  tempCountToken);
+    
+    tempCountToken = strtok(NULL, " "); 
+  }
+  printf("There are %d elements.\n", elementcount);
+  // Initialize the array we will return.
+  char** tokenized = (char**)calloc(MAX_ARGS_AMOUNT, sizeof(char*));
+  for (j = 0; j < elementcount; j++)
+  {
+    tokenized[j] = (char*)calloc((MAX_ELEMENT_LENGTH+1), sizeof(char));
+  }
+
   // Tokenize temp.
   printf("tempInput:%s\n", tempInput);
   char* token = strtok(tempInput, " ");
@@ -158,7 +178,6 @@ char** tokenizeInput(char* input)
       break;
     printf("token:%s\n", token);
     strcpy(tokenized[i], token);
-    printf("a\n");
     token = strtok(NULL, " ");
     printf("tokenized[%d]:%s\n", i, tokenized[i]);
   }
@@ -169,28 +188,42 @@ char** tokenizeInput(char* input)
 // The input has no pipes
 void pipe0()
 {
+  // Tokenize the input.
+  char** proc1 = tokenizeInput(cmd[0]);
+  printf("proc1[0]:%s\n", proc1[0]);
   // Check if the command is history or exit
   pid_t pid = fork();
   if (pid > 0) // Parent process
   {
     wait(0);
-    if (strcmp(cmd[0], "exit") == 0)
+    if (strcmp(proc1[0], "exit") == 0) // Check for the "exit" built-in command.
       shellExit();
   }
   else if (pid == 0) // Child process
   {
-    if (strcmp(cmd[0], "history") == 0) // FIX
+    if (strcmp(proc1[0], "history") == 0) // Check for the "history" built-in command.
     {
-      //shellHistory();
-      shellExit();
+      // Check the argument.
+      if (strcmp(proc1[1], "") == 0)
+      {
+        shellHistoryDefault();
+      }
+      else
+      {
+        int x = atoi(proc1[1]);
+        shellHistory(x);
+      }
+      exit(EXIT_SUCCESS);
     }
-    else if (strcmp(cmd[0], "exit") == 0)
-    {
-      shellExit();
-    }
+    else if (strcmp(proc1[0], "exit") == 0) // Check for the "exit" built-in command.
+      exit(EXIT_SUCCESS);
     else // All other commands
     {
-
+      if (execvp(proc1[0], proc1) < 0);
+      {
+        perror("Could not exec.\n");
+        exit(EXIT_FAILURE);
+      }
     }
   }
   else // Fork failed
@@ -315,16 +348,16 @@ int main (int argc, char** argv)
 
     // TESTAN====================================================================================
     // Print the contents of cmd
-    int x;
-    for (x = 0; x < 4; x++)
-    {
-      printf("cmd[%d]:%s\n", x, cmd[x]);
-    }
+    //int x;
+    //for (x = 0; x < 4; x++)
+    //{
+    //  printf("cmd[%d]:%s\n", x, cmd[x]);
+    //}
     //===========================================================================================
 
     // Which scenario are we in? It is dependent on how many pipes are in the raw input.
-    if (pCount == 0);
-      //pipe0();
+    if (pCount == 0)
+      pipe0();
     else if (pCount == 1)
       pipe1();
     else if (pCount == 2)
@@ -337,6 +370,7 @@ int main (int argc, char** argv)
       exit(EXIT_FAILURE);
     }
     
+    /**
     char** test = tokenizeInput(cmd[0]);
     printf("cmd[0]:%s\n", cmd[0]);
     int j;
@@ -344,7 +378,7 @@ int main (int argc, char** argv)
     {
       printf("tokenizeInput for cmd[%d]:%s\n", j, test[j]);
     }
-    
+    */
 
 
     //return 0; // TESTAN===========================================================================
