@@ -8,6 +8,7 @@
 #define MAX_INPUT_LENGTH 256
 #define MAX_ELEMENT_LENGTH 64
 #define DEFAULT_STACK_LENGTH 150
+#define MAX_ARGS_AMOUNT 8
 
 // Data structures
 typedef struct Node Node;
@@ -35,26 +36,6 @@ Stack historyStack;
 
 /** 
 * Stack  functions
-*/
-
-
-/**
-void stackInit(Stack* stack)
-{
-  stack->size = 0;
-  int i;
-  for (i = 0; i < DEFAULT_STACK_LENGTH; i++)
-  {
-    memset(stack->contents, '\0', MAX_INPUT_LENGTH);
-  }
-}
-
-
-void stackDestroy(Stack* stack)
-{
-
-}
-
 */
 
 void stackPush(Stack* stack, char* val)
@@ -102,7 +83,7 @@ int pipeCount(char* input)
 }
 
 
-int parseInput(char* input)
+void parseInput(char* input)
 {
   int i;
   // Check if there are 3 or less pipes.
@@ -114,19 +95,21 @@ int parseInput(char* input)
   }
 
   // Load all the arguments into cmd
-  char* temp = strtok(input, " | ");
+  char* temp = strtok(input, "|");
   for (i = 0; i < pCount+1; i++)
   {
     strcpy(cmd[i],  temp);
-    temp = strtok(NULL, " | ");
+    temp = strtok(NULL, "|");
   }
 }
 
 // Terminate the shell.
 void shellExit()
 {
-  
+  exit(EXIT_SUCCESS);
 }
+
+
 
 // Print the n last lines that were executed in the shell. Default is 10.
 void shellHistory(int n)
@@ -141,16 +124,79 @@ void shellHistory(int n)
   }
 }
 
+void shellHistoryDefault()
+{
+  shellHistory(10);
+}
+
 void writeToHistory(char* input)
 {
   stackPush(&historyStack, input);
 }
 
 
+
+// Tokenizes a string according to spaces. This does not modify the original string.
+char** tokenizeInput(char* input)
+{
+  printf("input:%s\n", input);
+  int i, j;
+  char tempInput[MAX_ELEMENT_LENGTH+1]; // Used to preserve char* input param.
+  //char tokenized[MAX_ARGS_AMOUNT][MAX_ELEMENT_LENGTH+1]; // Max of 8 args per command.
+  char** tokenized = (char**)malloc(MAX_ARGS_AMOUNT * sizeof(char*));
+  for (j = 0; j < MAX_ARGS_AMOUNT; j++)
+  {
+    tokenized[j] = (char*)malloc((MAX_ELEMENT_LENGTH+1) * sizeof(char));
+  }
+  strcpy(tempInput, input);
+  // Tokenize temp.
+  printf("tempInput:%s\n", tempInput);
+  char* token = strtok(tempInput, " ");
+  for (i = 0;  i < MAX_ARGS_AMOUNT; i++)
+  {
+    if (token == NULL)
+      break;
+    printf("token:%s\n", token);
+    strcpy(tokenized[i], token);
+    printf("a\n");
+    token = strtok(NULL, " ");
+    printf("tokenized[%d]:%s\n", i, tokenized[i]);
+  }
+  return tokenized;
+}
+
+
 // The input has no pipes
 void pipe0()
 {
+  // Check if the command is history or exit
+  pid_t pid = fork();
+  if (pid > 0) // Parent process
+  {
+    wait(0);
+    if (strcmp(cmd[0], "exit") == 0)
+      shellExit();
+  }
+  else if (pid == 0) // Child process
+  {
+    if (strcmp(cmd[0], "history") == 0) // FIX
+    {
+      //shellHistory();
+      shellExit();
+    }
+    else if (strcmp(cmd[0], "exit") == 0)
+    {
+      shellExit();
+    }
+    else // All other commands
+    {
 
+    }
+  }
+  else // Fork failed
+  {
+    perror("Fork failed.\n");
+  }
 }
 
 // The input has one pipe
@@ -277,8 +323,8 @@ int main (int argc, char** argv)
     //===========================================================================================
 
     // Which scenario are we in? It is dependent on how many pipes are in the raw input.
-    if (pCount == 0)
-      pipe0();
+    if (pCount == 0);
+      //pipe0();
     else if (pCount == 1)
       pipe1();
     else if (pCount == 2)
@@ -290,7 +336,17 @@ int main (int argc, char** argv)
       perror("This shell does not support more than 3 pipes.");
       exit(EXIT_FAILURE);
     }
-    shellHistory(5);
+    
+    char** test = tokenizeInput(cmd[0]);
+    printf("cmd[0]:%s\n", cmd[0]);
+    int j;
+    for (j = 0; j < 8; j++)
+    {
+      printf("tokenizeInput for cmd[%d]:%s\n", j, test[j]);
+    }
+    
+
+
     //return 0; // TESTAN===========================================================================
   }
 
