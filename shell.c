@@ -13,24 +13,14 @@
 typedef struct Node Node;
 typedef struct Stack Stack;
 
-/**
- * Node implementation
- */
-
-struct Node
-{
-  char* value;
-  Node *next;
-};
-
 
 /**
 * Stack implementation
 */
 struct Stack
 {
+  //char** contents;
   char contents[DEFAULT_STACK_LENGTH][MAX_INPUT_LENGTH];
-  Node* top;
   int size;
 };
 
@@ -47,66 +37,40 @@ Stack historyStack;
 * Stack  functions
 */
 
+
+/**
 void stackInit(Stack* stack)
 {
-  
+  stack->size = 0;
+  int i;
+  for (i = 0; i < DEFAULT_STACK_LENGTH; i++)
+  {
+    memset(stack->contents, '\0', MAX_INPUT_LENGTH);
+  }
 }
+
 
 void stackDestroy(Stack* stack)
 {
 
 }
 
-// Push to the stack
+*/
+
 void stackPush(Stack* stack, char* val)
 {
-  Node* node;
-  node->value = val;
-  printf("val:%s\n", val);
-  if (stack->size == 0)
+  int n = stack->size;
+  if (n != DEFAULT_STACK_LENGTH)
   {
-    stack->top = node;
-    printf("Top of stack:%s\n", stack->top->value);
+    strcpy(stack->contents[n], val);
     stack->size++;
   }
   else
   {
-
-    node->next = stack->top;
-    stack->top = node;
-    stack->size++;
+    perror("Cannot push to stack: stack is full.");
   }
 }
 
-// Pop the stack
-Node stackPop(Stack *stack)
-{
-  Node temp;
-  if (stack->size == 0)
-  {
-    
-    printf("Cannot pop from stack: stack is empty\n");
-    exit(EXIT_FAILURE);
-  }
-  else if (stack->size == 1)
-  {
-    // Because we keep track of the size as an integer, we can just return the
-    // top of the node without removing it as long as we decrement the size 
-    // counter.
-    temp = *stack->top;
-    stack->size--;
-    return temp;
-
-
-  }
-  else
-  {
-    temp = *stack->top;
-    stack->top = stack->top->next;
-    stack->size--;
-    return temp;
-  }
-}
 
 
 void clearCMD()
@@ -171,24 +135,15 @@ void shellHistory(int n)
   if (n > historyStack.size)
     n = historyStack.size;
   // Iterate through n times.
-  Node* temp = historyStack.top;
-  printf("shellHistory[0]:%s\n", temp->value);
-  for (i = 1; i < n; i++)
+  for (i = historyStack.size - 1; i >= historyStack.size - n; i--)
   {
-    temp = temp->next;
-    printf("shellHistory[%d]:%s\n", i, temp->value);
+    printf("shellHistory[%d]:%s\n", i, historyStack.contents[i]);
   }
 }
 
 void writeToHistory(char* input)
 {
-  // Create a new pointer to hold the data
-  char* temp;
-  temp = (char*)malloc((MAX_INPUT_LENGTH+1)*sizeof(char));
-  memset(temp, '\0', MAX_INPUT_LENGTH+1);
-  strcpy(temp, input);
-  // Push the input to the stack
-  stackPush(&historyStack, temp);
+  stackPush(&historyStack, input);
 }
 
 
@@ -335,8 +290,6 @@ int main (int argc, char** argv)
       perror("This shell does not support more than 3 pipes.");
       exit(EXIT_FAILURE);
     }
-    printf("Size of stack: %d\n", historyStack.size);
-    printf("Top of stack in main:%s\n", historyStack.top->value);
     shellHistory(5);
     //return 0; // TESTAN===========================================================================
   }
