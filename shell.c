@@ -52,7 +52,109 @@ void stackPush(Stack* stack, char* val)
   }
 }
 
+/**
+ * General functions
+ */
 
+
+// Tokenizes a string according to spaces. This does not modify the original string.
+char** tokenizeInput(char* input)
+{
+  int i, j, k, elementcount;
+  char tempInput[MAX_ELEMENT_LENGTH+1]; // Used to preserve char* input param.
+  char countInput[MAX_ELEMENT_LENGTH+1];
+  
+  // Copy the input into the temp string and replace all newline chacacters with null terminators.
+  strcpy(tempInput, input);
+  for(k = 0; k < MAX_ELEMENT_LENGTH+1; k++)
+    if (tempInput[k] == '\n')
+      tempInput[k] = '\0';
+  strcpy(countInput, tempInput);
+
+  // Count how many elements there are in the input
+  elementcount = 0;
+  char* tempCountToken = strtok(countInput, " ");
+  while (tempCountToken)
+  {
+    elementcount++;
+    tempCountToken = strtok(NULL, " "); 
+  }
+  // Initialize the array we will return.
+  char** tokenized = (char**)calloc(MAX_ARGS_AMOUNT, sizeof(char*));
+  for (j = 0; j < elementcount; j++)
+  {
+    tokenized[j] = (char*)calloc((MAX_ELEMENT_LENGTH+1), sizeof(char));
+  }
+
+  // Tokenize temp.
+  char* token = strtok(tempInput, " ");
+  for (i = 0;  i < MAX_ARGS_AMOUNT; i++)
+  {
+    if (token == NULL)
+      break;
+    strcpy(tokenized[i], token);
+    token = strtok(NULL, " ");
+  }
+  return tokenized;
+}
+
+
+
+// Used for command1 > file1
+// Executes command1 and puts the output into file1.
+void redirectInput()
+{
+  FILE* fp;
+  int fd;
+  pid_t pid;
+  
+
+  // Remove ">" from the string and replace with " "
+  int i;
+  int n = strlen(cmd[0]);
+  for (i = 0; i < n; i++)
+  {
+    if (cmd[0][i] == '>')
+      cmd[0][i] = ' ';
+  }
+  printf("cmd[0]:%s\n", cmd[0]);
+  // Tokenize the input.
+  char** input = tokenizeInput(cmd[0]);
+  fp = fopen(input[1], "w+");
+  fd = fileno(fp);
+  
+  // Fork
+  if ((pid = fork()) < 0)
+  {
+    perror("Could not fork");
+    exit(EXIT_FAILURE);
+  }
+  else if (pid > 0) // Parent process
+  { 
+    wait(0);
+  }
+  else // Child process
+  {
+    if (dup2(fd, 1) < 0)
+    {
+      perror("Could not dup2");
+      exit(EXIT_FAILURE);
+    }
+    execvp(input[0], input);
+  }
+}
+
+
+
+
+// Used for command1 < file1
+// Executes command1 with file1 as the source of input.
+void redirectOutput()
+{
+  char** input = tokenizeInput(cmd[0]);
+
+
+}
 
 void clearCMD()
 {
@@ -135,49 +237,6 @@ void writeToHistory(char* input)
 }
 
 
-
-// Tokenizes a string according to spaces. This does not modify the original string.
-char** tokenizeInput(char* input)
-{
-  int i, j, k, elementcount;
-  char tempInput[MAX_ELEMENT_LENGTH+1]; // Used to preserve char* input param.
-  char countInput[MAX_ELEMENT_LENGTH+1];
-  
-  // Copy the input into the temp string and replace all newline chacacters with null terminators.
-  strcpy(tempInput, input);
-  for(k = 0; k < MAX_ELEMENT_LENGTH+1; k++)
-    if (tempInput[k] == '\n')
-      tempInput[k] = '\0';
-  strcpy(countInput, tempInput);
-
-  // Count how many elements there are in the input
-  elementcount = 0;
-  char* tempCountToken = strtok(countInput, " ");
-  while (tempCountToken)
-  {
-    elementcount++;
-    tempCountToken = strtok(NULL, " "); 
-  }
-  // Initialize the array we will return.
-  char** tokenized = (char**)calloc(MAX_ARGS_AMOUNT, sizeof(char*));
-  for (j = 0; j < elementcount; j++)
-  {
-    tokenized[j] = (char*)calloc((MAX_ELEMENT_LENGTH+1), sizeof(char));
-  }
-
-  // Tokenize temp.
-  char* token = strtok(tempInput, " ");
-  for (i = 0;  i < MAX_ARGS_AMOUNT; i++)
-  {
-    if (token == NULL)
-      break;
-    strcpy(tokenized[i], token);
-    token = strtok(NULL, " ");
-  }
-  return tokenized;
-}
-
-
 // The input has no pipes
 void pipe0()
 {
@@ -205,6 +264,14 @@ void pipe0()
         shellHistory(x);
       }
       exit(EXIT_SUCCESS);
+    }
+    else if (strchr(cmd[0], '>') != NULL) // Check for redirected input
+    {
+      redirectInput();
+    }
+    else if (strchr(cmd[0], '<') != NULL)
+    {
+      redirectOutput();
     }
     else // All other commands
     {
@@ -528,6 +595,7 @@ void pipe3()
     }
   }
 }
+
 
 
 // Main function
