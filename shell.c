@@ -270,27 +270,28 @@ void pipe1()
     else if (pid2 > 0) // Parent process
     {
       printf("pid2 parent:%d\n", pid2);
-      close(fds[0]); // Close read end
+      close(fds[1]); // Close read end
       // Close stdout, redirect to the writing end of the pipe.
-      if (dup2(fds[1], 1) < 0)
+      if (dup2(fds[0], 0) < 0)
       {
         perror("Could not dup2");
         exit(EXIT_FAILURE);
       }
-      execvp(proc1[0], proc1);
+      wait(0);
+      execvp(proc2[0], proc2);
       perror("Could not exec");
       exit(EXIT_FAILURE);
     }
     else // Child process
     {
       printf("pid2 child:%d\n", pid2);
-      close(fds[1]);
-      if (dup2(fds[0], 0) < 0)
+      close(fds[0]);
+      if (dup2(fds[1], 1) < 0)
       {
         perror("Could not dup2");
         exit(EXIT_FAILURE);
       }
-      execvp(proc2[0], proc2);
+      execvp(proc1[0], proc1);
       perror("Could not exec");
       exit(EXIT_FAILURE);
     }
