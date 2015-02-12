@@ -139,7 +139,6 @@ void writeToHistory(char* input)
 // Tokenizes a string according to spaces. This does not modify the original string.
 char** tokenizeInput(char* input)
 {
-  printf("input:%s\n", input);
   int i, j, k, elementcount;
   char tempInput[MAX_ELEMENT_LENGTH+1]; // Used to preserve char* input param.
   char countInput[MAX_ELEMENT_LENGTH+1];
