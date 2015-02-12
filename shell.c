@@ -300,7 +300,128 @@ void pipe1()
 // The input has two pipes
 void pipe2()
 {
+  int fds1[2];
+  int fds2[2];
+  pid_t pid1;
+  pid_t pid2;
+  pid_t pid3;
+  // Tokenize the input
+  char** proc1 = tokenizeInput(cmd[0]);
+  char** proc2 = tokenizeInput(cmd[1]);
+  char** proc3 = tokenizeInput(cmd[2]);
 
+  
+  
+  
+  
+  
+  printf("FIRST FORK!\n");
+  // Initial fork
+  if ((pid1 = fork()) < 0)
+  {
+    perror("Could not perform initial fork");
+    exit(EXIT_FAILURE);
+  }
+  else if (pid1 > 0) // Parent process waits for child to finish
+    wait(0);
+
+
+
+
+
+
+
+
+
+
+
+  else // Child process forks again and pipes
+  {
+    printf("SECOND FORK!\n");
+    printf("pid1 child:%d\n", pid1);
+    // Pipe
+    if (pipe(fds1) < 0)
+      perror("Could not pipe");
+
+    
+    // Second Fork
+    if ((pid2 = fork()) < 0) // Fork and check for error.
+    {
+      perror("Could not fork");
+      exit(EXIT_FAILURE);
+    }
+    else if (pid2 > 0) // Parent process
+    {
+      printf("pid2 parent:%d\n", pid2);
+      close(fds1[0]); // Close read end
+      // Close stdout, redirect to the writing end of the pipe.
+      if (dup2(fds1[1], 1) < 0)
+      {
+        perror("Could not dup2");
+        exit(EXIT_FAILURE);
+      }
+      execvp(proc1[0], proc1);
+      perror("Could not exec");
+      exit(EXIT_FAILURE);
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    else // Child process forks again and pipes
+    {
+      // Pipe
+      if (pipe(fds2) < 0)
+        perror("Could not pipe");
+      
+      printf("THIRD FORK!\n");
+      printf("pid2 child:%d\n", pid2);
+      // Third Fork
+      if ((pid3 = fork()) < 0)
+      {
+        perror("Could not fork");
+        exit(EXIT_FAILURE);
+      }
+      else if (pid3 > 0) // Parent process
+      {       
+        close(fds1[1]); // Close write end of first pipe
+        close(fds2[0]); // Close read end of second pipe
+        if (dup2(fds1[0], fds2[1]) < 0) //
+        {
+          perror("Could not dup2");
+          exit(EXIT_FAILURE);
+        } 
+        execvp(proc2[0], proc2);
+        perror("Could not exec");
+        exit(EXIT_FAILURE);  
+      }
+      else // Child process
+      {
+        printf("pid3 child:%d\n", pid3);
+        close(fds2[1]);
+        if (dup2(fds2[0], 0) < 0)
+        {
+          perror("Could not dup2");
+          exit(EXIT_FAILURE);
+        }
+        execvp(proc3[0], proc3);
+        perror("Could not exec");
+        exit(EXIT_FAILURE);
+      }
+    }
+  }
 }
 
 // The input has three pipes
