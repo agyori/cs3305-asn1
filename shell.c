@@ -1,3 +1,15 @@
+/************************************
+ * cs3305b - Operating Systems
+ *
+ * Assignment #1
+ *
+ * Alex Gyori
+ * 250643023
+ ************************************/
+
+
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
