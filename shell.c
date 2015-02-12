@@ -5,13 +5,12 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#define MAX_INPUT_LENGTH 256
-#define MAX_ELEMENT_LENGTH 64
+#define MAX_INPUT_LENGTH 512
+#define MAX_ELEMENT_LENGTH 128
 #define DEFAULT_STACK_LENGTH 150
 #define MAX_ARGS_AMOUNT 8
 
 // Data structures
-typedef struct Node Node;
 typedef struct Stack Stack;
 
 
@@ -156,6 +155,8 @@ void redirectOutput()
 
 }
 
+
+// Resets CMD: the array that holds up to 4 pipeable commands
 void clearCMD()
 {
   memset(cmd[0], '\0', MAX_ELEMENT_LENGTH);
@@ -171,6 +172,8 @@ void receiveInput(char* input)
   fgets(input, MAX_INPUT_LENGTH, stdin);
 }
   
+
+// Count the amount of pipes '|' in the input.
 int pipeCount(char* input)
 {
   // Check if there are greater than 3 pipes
@@ -184,7 +187,7 @@ int pipeCount(char* input)
   return pCount;
 }
 
-
+// Load up cmd[] with the given input tokenized by '|'
 void parseInput(char* input)
 {
   int i;
@@ -226,11 +229,13 @@ void shellHistory(int n)
   }
 }
 
+// Default parameters for shellHistory.
 void shellHistoryDefault()
 {
   shellHistory(10);
 }
 
+// Pushes the input to the top of the history stack
 void writeToHistory(char* input)
 {
   stackPush(&historyStack, input);
