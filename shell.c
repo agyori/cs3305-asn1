@@ -191,13 +191,12 @@ void pipe0()
   // Tokenize the input.
   char** proc1 = tokenizeInput(cmd[0]);
   printf("proc1[0]:%s\n", proc1[0]);
-  // Check if the command is history or exit
+  if (strcmp(proc1[0], "exit") == 0) // Check for the "exit" built-in command.
+    shellExit();
   pid_t pid = fork();
   if (pid > 0) // Parent process
   {
     wait(0);
-    if (strcmp(proc1[0], "exit") == 0) // Check for the "exit" built-in command.
-      shellExit();
   }
   else if (pid == 0) // Child process
   {
@@ -215,8 +214,6 @@ void pipe0()
       }
       exit(EXIT_SUCCESS);
     }
-    else if (strcmp(proc1[0], "exit") == 0) // Check for the "exit" built-in command.
-      exit(EXIT_SUCCESS);
     else // All other commands
     {
       if (execvp(proc1[0], proc1) < 0);
@@ -235,7 +232,69 @@ void pipe0()
 // The input has one pipe
 void pipe1()
 {
+  int fds[2];
+  pid_t pid1;
+  pid_t pid2;
+  // Tokenize the input
+  char** proc1 = tokenizeInput(cmd[0]);
+  char** proc2 = tokenizeInput(cmd[1]);
 
+  // Pipe
+  //if (pipe(fds) < 0)
+  //  perror("Could not pipe");
+
+  printf("FIRST FORK!\n");
+  // Initial fork
+  if ((pid1 = fork()) < 0)
+  {
+    perror("Could not perform initial fork");
+    exit(EXIT_FAILURE);
+  }
+  else if (pid1 > 0) // Parent process waits for child to finish
+    wait(0);
+  else // Child process forks again and pipes
+  {
+    printf("SECOND FORK!\n");
+    printf("pid1 child:%d\n", pid1);
+    // Pipe
+    if (pipe(fds) < 0)
+      perror("Could not pipe");
+
+    
+    // Second Fork
+    if ((pid2 = fork()) < 0) // Fork and check for error.
+    {
+      perror("Could not fork");
+      exit(EXIT_FAILURE);
+    }
+    else if (pid2 > 0) // Parent process
+    {
+      printf("pid2 parent:%d\n", pid2);
+      close(fds[0]); // Close read end
+      // Close stdout, redirect to the writing end of the pipe.
+      if (dup2(fds[1], 1) < 0)
+      {
+        perror("Could not dup2");
+        exit(EXIT_FAILURE);
+      }
+      execvp(proc1[0], proc1);
+      perror("Could not exec");
+      exit(EXIT_FAILURE);
+    }
+    else // Child process
+    {
+      printf("pid2 child:%d\n", pid2);
+      close(fds[1]);
+      if (dup2(fds[0], 0) < 0)
+      {
+        perror("Could not dup2");
+        exit(EXIT_FAILURE);
+      }
+      execvp(proc2[0], proc2);
+      perror("Could not exec");
+      exit(EXIT_FAILURE);
+    }
+  }
 }
 
 // The input has two pipes
